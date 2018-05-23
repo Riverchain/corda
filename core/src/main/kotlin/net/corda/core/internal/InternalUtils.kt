@@ -25,7 +25,10 @@ import rx.Observable
 import rx.Observer
 import rx.subjects.PublishSubject
 import rx.subjects.UnicastSubject
-import java.io.*
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.math.BigDecimal
@@ -58,6 +61,17 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
 val Throwable.rootCause: Throwable get() = cause?.rootCause ?: this
+val Throwable.rootMessage: String? get() {
+    var message = this.message
+    var throwable = cause
+    while (throwable != null) {
+        if (throwable.message != null) {
+            message = throwable.message
+        }
+        throwable = throwable.cause
+    }
+    return message
+}
 
 infix fun Temporal.until(endExclusive: Temporal): Duration = Duration.between(this, endExclusive)
 
