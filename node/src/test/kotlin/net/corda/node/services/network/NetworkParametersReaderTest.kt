@@ -6,6 +6,11 @@ import net.corda.core.internal.createDirectories
 import net.corda.core.internal.div
 import net.corda.core.internal.exists
 import net.corda.core.internal.readObject
+import net.corda.core.node.NetworkParameters
+import net.corda.core.serialization.SerializationDefaults
+import net.corda.core.serialization.deserialize
+import net.corda.core.serialization.serialize
+import net.corda.core.utilities.days
 import net.corda.core.utilities.seconds
 import net.corda.node.internal.NetworkParametersReader
 import net.corda.nodeapi.internal.network.*
@@ -23,6 +28,8 @@ import java.net.URL
 import java.nio.file.FileSystem
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class NetworkParametersReaderTest {
     @Rule
@@ -72,5 +79,18 @@ class NetworkParametersReaderTest {
         NetworkParametersCopier(fileParameters).install(baseDirectory)
         val parameters = NetworkParametersReader(DEV_ROOT_CA.certificate, networkMapClient, baseDirectory).networkParameters
         assertThat(parameters).isEqualTo(fileParameters)
+    }
+
+    @Test
+    fun `serialized parameters compatibility`() {
+        // Network parameters file from before eventHorizon extension
+        val inputStream = javaClass.classLoader.getResourceAsStream("network-compatibility/network-parameters")
+        assertNotNull(inputStream)
+        val inByteArray: ByteArray = inputStream.readBytes()
+        val parameters = inByteArray.deserialize<SignedNetworkParameters>(context = SerializationDefaults.STORAGE_CONTEXT) // todo storage context???
+        assertThat(parameters.verified().eventHorizon).isEqualTo(Int.MAX_VALUE.days)
+        // Serialize back and check that representation is byte-to-byte identical to what it was originally.
+        val serializedForm = parameters.serialize(context = SerializationDefaults.STORAGE_CONTEXT)
+        assertTrue(inByteArray.contentEquals(serializedForm.bytes))
     }
 }

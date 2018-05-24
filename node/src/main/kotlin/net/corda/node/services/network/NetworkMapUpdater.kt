@@ -175,7 +175,7 @@ The node will shutdown now.""")
         val (update, signedNewNetParams) = requireNotNull(newNetworkParameters) { "Couldn't find parameters update for the hash: $parametersHash" }
         // We should check that we sign the right data structure hash.
         val newNetParams = signedNewNetParams.verifiedNetworkMapCert(networkMapClient.trustedRoot)
-        val newParametersHash = newNetParams.serialize().hash
+        val newParametersHash = newNetParams.serialize().hash // TODO think of how it will fail on different serialization issues
         if (parametersHash == newParametersHash) {
             // The latest parameters have priority.
             signedNewNetParams.serialize()
